@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enter Roll Number</title>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.1.0/firebase-app.js";
+        import { getFirestore, collection, doc, setDoc } from "https://www.gstatic.com/firebasejs/9.1.0/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.1.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBbBd_x2CBbXnr_IYqIWEXX0Uyi0KrVgeE",
+            authDomain: "socialemotional-60ae4.firebaseapp.com",
+            projectId: "socialemotional-60ae4",
+            storageBucket: "socialemotional-60ae4.appspot.com",
+            messagingSenderId: "869691683450",
+            appId: "1:869691683450:web:625a9bacebab34a41581c3"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        async function submitRollNumber() {
+            const rollNumber = document.getElementById("rollNumber").value.trim();
+            if (rollNumber === "") {
+                alert("Please enter a valid roll number.");
+                return;
+            }
+
+            // Store roll number in sessionStorage
+            sessionStorage.setItem("rollNumber", rollNumber);
+
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    const teacherEmail = user.email;
+
+                    try {
+                        // Save roll number under the logged-in teacher's sub-collection
+                        const rollRef = doc(collection(db, "teacher", teacherEmail, "students"), rollNumber);
+                        await setDoc(rollRef, {
+                            timestamp: new Date().toISOString(),
+                        });
+
+                        alert("Roll Number Saved!");
+                        // Redirect to questionnaire page
+                        window.location.href = "home2.html";
+                    } catch (error) {
+                        alert("Error: " + error.message);
+                    }
+                } else {
+                    alert("You need to log in to submit the roll number.");
+                }
+            });
+        }
+
+        window.submitRollNumber = submitRollNumber;
+    </script>
+</head>
+<body>
+    <h2>Enter Roll Number</h2>
+    <input type="text" id="rollNumber" placeholder="Enter Roll Number">
+    <button onclick="submitRollNumber()">Submit</button>
+</body>
+</html>

@@ -1,0 +1,101 @@
+/* Basic Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', Arial, sans-serif;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background: url('back2.jpg') no-repeat center center fixed;
+    background-size: cover; /* Ensures the background image covers the entire viewport */
+    color: #333;
+    background-attachment: fixed; /* Ensures the background stays fixed while scrolling */
+    background-position: center center; /* Centers the background image */
+    background-repeat: no-repeat; /* Ensures the image doesn't repeat */
+    filter: none; /* Prevents brightness or filter changes */
+}
+
+
+.container {
+    text-align: center;
+    width: 100%;
+    max-width: 1200px; /* Prevents the content from becoming too wide on large screens */
+    margin: 0 20px; /* Adds margin to the sides to prevent content from touching the edges */
+}
+
+/* Tagline Styling */
+h1 {
+    font-size: 3rem; /* Increase font size for prominence */
+    color: hwb(240 3% 96%); /* Darker color for better readability */
+    font-weight: 600; /* Slightly bolder text for emphasis */
+    line-height: 1.4; /* Adds spacing between lines */
+    margin-bottom: 20px; /* Creates space between tagline and content */
+    padding: 0 20px; /* Adds padding for responsiveness */
+    max-width: 90%; /* Ensures the tagline doesn't stretch too wide */
+    margin-left: auto;
+    margin-right: auto; /* Centers the tagline */
+}
+
+h1:nth-child(1) {
+    margin-bottom: 10px; /* Reduces space between the two tagline lines */
+}
+
+h1:nth-child(2) {
+    margin-top: 0; /* Removes top margin for the second line */
+}
+
+.card-container {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap; /* Allows cards to wrap on smaller screens */
+}
+
+.card {
+    width: 150px;
+    height: 200px;
+    background-color: #fff;
+    border-radius: 15px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px;
+    transition: transform 0.3s, box-shadow 0.3s;
+    cursor: pointer;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+}
+
+.card img {
+    width: 60px;
+    height: 60px;
+    margin-top: 10px;
+}
+
+.card h2 {
+    font-size: 1rem;
+    color: #333;
+    margin-top: 15px;
+}
+
+.arrow {
+    font-size: 1.5rem;
+    color: #007bff;
+    margin-bottom: 10px;
+}
+
+.arrow:hover {
+    color: #0056b3;
+}

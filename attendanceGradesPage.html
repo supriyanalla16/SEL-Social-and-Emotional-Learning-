@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance and Grades</title>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-app.js";
+        import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBbBd_x2CBbXnr_IYqIWEXX0Uyi0KrVgeE",
+            authDomain: "socialemotional-60ae4.firebaseapp.com",
+            projectId: "socialemotional-60ae4",
+            storageBucket: "socialemotional-60ae4.appspot.com",
+            messagingSenderId: "869691683450",
+            appId: "1:869691683450:web:625a9bacebab34a41581c3"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const rollNumber = urlParams.get('rollNumber');  // Capture the roll number from the URL
+
+            if (!rollNumber) {
+                alert("Roll number not found.");
+                window.location.href = "rollnumber.html";  // Redirect to rollnumber.html if not found
+            } else {
+                // Store roll number in sessionStorage if not already stored
+                if (!sessionStorage.getItem('rollNumber')) {
+                    sessionStorage.setItem('rollNumber', rollNumber);
+                }
+
+                document.getElementById("rollDisplay").innerText = "Roll Number: " + rollNumber;
+                renderAttendanceForm(rollNumber);
+            }
+        });
+
+        // Function to render the attendance form with month selection
+        function renderAttendanceForm(rollNumber) {
+            const form = document.getElementById("attendance-form");
+
+            // Create a dropdown for month selection
+            const monthLabel = document.createElement("label");
+            monthLabel.textContent = "Select Month:";
+            form.appendChild(monthLabel);
+
+            const monthSelect = document.createElement("select");
+            monthSelect.id = "month-select";
+            const months = [
+                "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"
+            ];
+
+            months.forEach((month) => {
+                const option = document.createElement("option");
+                option.value = month;
+                option.textContent = month;
+                monthSelect.appendChild(option);
+            });
+
+            form.appendChild(monthSelect);
+
+            // Create an input field for attendance percentage
+            const attendanceLabel = document.createElement("label");
+            attendanceLabel.textContent = "Enter Attendance Percentage:";
+            form.appendChild(attendanceLabel);
+
+            const attendanceInput = document.createElement("input");
+            attendanceInput.type = "number";
+            attendanceInput.id = "attendance-input";
+            attendanceInput.min = 0;
+            attendanceInput.max = 100;
+            attendanceInput.placeholder = "Enter percentage (0-100)";
+            form.appendChild(attendanceInput);
+
+            // Add submit button to form
+            const submitButton = document.createElement("button");
+            submitButton.textContent = "Submit Attendance";
+            submitButton.addEventListener("click", (e) => {
+                e.preventDefault();  // Prevent the default form submission behavior
+                submitAttendanceForm();
+            });
+
+            form.appendChild(submitButton);
+        }
+
+        // Function to submit the attendance data
+        async function submitAttendanceForm() {
+            const rollNumberFromSession = sessionStorage.getItem("rollNumber");
+
+            if (!rollNumberFromSession) {
+                alert("Roll number not found in session.");
+                return;
+            }
+
+            // Collecting the selected month and attendance percentage
+            const selectedMonth = document.getElementById("month-select").value;
+            const attendancePercentage = document.getElementById("attendance-input").value;
+
+            if (attendancePercentage < 0 || attendancePercentage > 100) {
+                alert("Please enter a valid attendance percentage between 0 and 100.");
+                return;
+            }
+
+            const attendanceData = {
+                rollNumber: rollNumberFromSession,
+                month: selectedMonth,
+                attendance: attendancePercentage
+            };
+
+            // Save the attendance data to Firestore
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    const userId = user.uid;
+                    try {
+                        await setDoc(doc(db, "studentAttendance", `${userId}_${rollNumberFromSession}_${selectedMonth}`), attendanceData);
+                        alert("Attendance has been submitted successfully!");
+                    } catch (error) {
+                        console.error("Error submitting attendance:", error);
+                        alert("An error occurred while submitting attendance.");
+                    }
+                } else {
+                    alert("You need to log in to submit the attendance.");
+                }
+            });
+        }
+    </script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        label {
+            font-size: 18px;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        input[type="number"] {
+            padding: 5px;
+            font-size: 16px;
+            width: 100px;
+            margin-bottom: 15px;
+        }
+
+        select {
+            font-size: 16px;
+            padding: 5px;
+            margin-bottom: 15px;
+            width: 100%;
+        }
+
+        button {
+            font-size: 18px;
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+
+        #rollDisplay {
+            font-size: 18px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h2>Attendance and Grades</h2>
+    <!-- Display the roll number at the top -->
+    <p id="rollDisplay"></p>
+    <form id="attendance-form"></form>
+</body>
+</html>

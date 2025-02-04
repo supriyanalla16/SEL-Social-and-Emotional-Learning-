@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enter Roll Number</title>
+    <script type="module">
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-app.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBbBd_x2CBbXnr_IYqIWEXX0Uyi0KrVgeE",
+            authDomain: "socialemotional-60ae4.firebaseapp.com",
+            projectId: "socialemotional-60ae4",
+            storageBucket: "socialemotional-60ae4.appspot.com",
+            messagingSenderId: "869691683450",
+            appId: "1:869691683450:web:625a9bacebab34a41581c3"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        // Function to handle roll number submission for parents
+        async function submitRollNumber() {
+            const rollNumber = document.getElementById("rollNumber").value.trim();
+            if (rollNumber === "") {
+                alert("Please enter a valid roll number.");
+                return;
+            }
+
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    const email = user.email; // Retrieve the parent's email
+                    const role = localStorage.getItem('role'); // Retrieve the role (either "parent" or "teacher")
+
+                    if (role === "parent") {
+                        try {
+                            const parentRef = doc(db, "parentsUnderStudent", email); // Create reference to "parentsUnderStudent" collection
+                            
+                            // Store the roll number as a key under the parent's email in Firestore
+                            await setDoc(parentRef, {
+                                [`students.${rollNumber}`]: new Date().toISOString() // Store roll number as key under "students"
+                            }, { merge: true });
+
+                            // Save roll number in sessionStorage for later use
+                            sessionStorage.setItem("rollNumber", rollNumber);
+                            
+                            alert("Roll number submitted successfully!");
+                            window.location.href = "home3.html"; // Redirect to home page
+                        } catch (error) {
+                            console.error("Error storing roll number:", error);
+                            alert("Error saving roll number. Please try again.");
+                        }
+                    } else {
+                        alert("You must be a parent to submit roll numbers.");
+                    }
+                } else {
+                    alert("You need to log in to submit your roll number.");
+                }
+            });
+        }
+
+        window.submitRollNumber = submitRollNumber;
+    </script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 100px;
+        }
+        input, button {
+            font-size: 18px;
+            padding: 10px;
+            margin: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h2>Enter Your Roll Number</h2>
+    <input type="text" id="rollNumber" placeholder="Enter Roll Number">
+    <button onclick="submitRollNumber()">Submit</button>
+</body>
+</html>

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Page</title>
+    <script type="module">
+        document.addEventListener("DOMContentLoaded", () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const rollNumber = urlParams.get('rollNumber');
+            console.log("Roll number from URL:", rollNumber);  // Debug log
+            if (!rollNumber) {
+                alert("Student not found.");
+                return;
+            }
+
+            // Use the rollNumber to display the student title
+            document.getElementById("studentTitle").textContent = `Student: ${rollNumber}`;
+            
+            // Update links to include rollNumber as a URL parameter
+            document.getElementById("questionnaireLink").href = `home2.html?rollNumber=${rollNumber}`;
+            document.getElementById("attendanceAndGradesLink").href = `attendanceGradesPage.html?rollNumber=${rollNumber}`;
+        });
+    </script>
+    <style>
+        a {
+            display: block;
+            border: 1px solid #ccc;
+            padding: 20px;
+            margin: 10px;
+            text-align: center;
+            background-color: #f4f4f4;
+            text-decoration: none;
+            color: #000;
+            font-size: 18px;
+        }
+
+        a:hover {
+            background-color: #ddd;
+        }
+    </style>
+</head>
+<body>
+    <h2 id="studentTitle">Student: </h2>
+    
+    <!-- Links for Questionnaire and Attendance & Grades -->
+    <a id="questionnaireLink" href="#">
+        <h3>Questionnaire</h3>
+    </a>
+    
+    <a id="attendanceAndGradesLink" href="#">
+        <h3>Attendance & Grades</h3>
+    </a>
+</body>
+</html>

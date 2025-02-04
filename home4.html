@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="stylehome4.css">
+    <title>Admin Panel</title>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-app.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, getDocs, deleteDoc, query, where } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBbBd_x2CBbXnr_IYqIWEXX0Uyi0KrVgeE",
+            authDomain: "socialemotional-60ae4.firebaseapp.com",
+            projectId: "socialemotional-60ae4",
+            storageBucket: "socialemotional-60ae4.appspot.com",
+            messagingSenderId: "869691683450",
+            appId: "1:869691683450:web:625a9bacebab34a41581c3"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        document.addEventListener("DOMContentLoaded", () => {
+            loadDropdowns();
+
+            document.getElementById("addTeacherBtn").addEventListener("click", addTeacher);
+            document.getElementById("addStudentBtn").addEventListener("click", addStudent);
+            document.getElementById("addParentBtn").addEventListener("click", addParent);
+            document.getElementById("assignStudentsBtn").addEventListener("click", assignStudents);
+            document.getElementById("assignChildrenBtn").addEventListener("click", assignChildren);
+            document.getElementById("viewTeacherAssignmentsBtn").addEventListener("click", viewTeacherAssignments);
+            document.getElementById("viewParentAssignmentsBtn").addEventListener("click", viewParentAssignments);
+
+            document.getElementById("deleteTeacherBtn").addEventListener("click", deleteTeacher);
+            document.getElementById("deleteStudentBtn").addEventListener("click", deleteStudent);
+            document.getElementById("deleteParentBtn").addEventListener("click", deleteParent);
+        });
+
+        // Check if a teacher exists by email
+        async function teacherExists(email) {
+            const q = query(collection(db, "teachers"), where("email", "==", email));
+            const querySnapshot = await getDocs(q);
+            return !querySnapshot.empty;
+        }
+
+        // Check if a student exists by roll number
+        async function studentExists(roll) {
+            const q = query(collection(db, "students"), where("roll", "==", roll));
+            const querySnapshot = await getDocs(q);
+            return !querySnapshot.empty;
+        }
+
+        // Check if a parent exists by email
+        async function parentExists(email) {
+            const q = query(collection(db, "parents"), where("email", "==", email));
+            const querySnapshot = await getDocs(q);
+            return !querySnapshot.empty;
+        }
+
+        // Add a new teacher
+        async function addTeacher() {
+            const name = document.getElementById('teacherName').value.trim();
+            const email = document.getElementById('teacherEmail').value.trim();
+            if (!name || !email) {
+                alert("Enter Teacher Name and Email.");
+                return;
+            }
+
+            if (await teacherExists(email)) {
+                alert("Teacher with this email already exists.");
+                return;
+            }
+
+            const teacherId = "teacher_" + Date.now(); 
+            await setDoc(doc(db, "teachers", teacherId), { name, email });
+            alert("Teacher Added!");
+            loadDropdowns();
+        }
+
+        // Add a new student
+        async function addStudent() {
+            const name = document.getElementById('studentName').value.trim();
+            const roll = document.getElementById('studentRoll').value.trim();
+            if (!name || !roll) {
+                alert("Enter Student Name and Roll Number.");
+                return;
+            }
+
+            if (await studentExists(roll)) {
+                alert("Student with this roll number already exists.");
+                return;
+            }
+
+            await setDoc(doc(db, "students", roll), { name, roll });
+            alert("Student Added!");
+            loadDropdowns();
+        }
+
+        // Add a new parent
+        async function addParent() {
+            const name = document.getElementById('parentName').value.trim();
+            const email = document.getElementById('parentEmail').value.trim();
+            if (!name || !email) {
+                alert("Enter Parent Name and Email.");
+                return;
+            }
+
+            if (await parentExists(email)) {
+                alert("Parent with this email already exists.");
+                return;
+            }
+
+            const parentId = "parent_" + Date.now();
+            await setDoc(doc(db, "parents", parentId), { name, email });
+            alert("Parent Added!");
+            loadDropdowns();
+        }
+
+        // Assign multiple students to a teacher
+        async function assignStudents() {
+            const teacherId = document.getElementById("teacherSelect").value;
+            const studentRollNumbers = Array.from(document.getElementById("studentSelect").selectedOptions).map(opt => opt.value);
+
+            if (!teacherId || studentRollNumbers.length === 0) {
+                alert("Please select a teacher and students.");
+                return;
+            }
+
+            const assignedRef = doc(db, "assignedStudents", teacherId);
+            const assignedSnap = await getDoc(assignedRef);
+
+            let existingStudents = [];
+            if (assignedSnap.exists()) {
+                existingStudents = assignedSnap.data().students || [];
+            }
+
+            const updatedStudents = [...new Set([...existingStudents, ...studentRollNumbers])];
+            await setDoc(assignedRef, { students: updatedStudents }, { merge: true });
+            alert("Students Assigned!");
+        }
+
+        // Assign children (students) to a parent
+        async function assignChildren() {
+            const parentId = document.getElementById("parentSelect").value;
+            const studentRollNumbers = Array.from(document.getElementById("studentForParentSelect").selectedOptions).map(opt => opt.value);
+
+            if (!parentId || studentRollNumbers.length === 0) {
+                alert("Please select a parent and children (students).");
+                return;
+            }
+
+            const assignedRef = doc(db, "assignedChildren", parentId);
+            const assignedSnap = await getDoc(assignedRef);
+
+            let existingChildren = [];
+            if (assignedSnap.exists()) {
+                existingChildren = assignedSnap.data().children || [];
+            }
+
+            const updatedChildren = [...new Set([...existingChildren, ...studentRollNumbers])];
+            await setDoc(assignedRef, { children: updatedChildren }, { merge: true });
+            alert("Children Assigned to Parent!");
+        }
+
+        // View assignments for teachers
+        
+        async function viewTeacherAssignments() {
+    const teacherAssignmentList = document.getElementById("teacherAssignmentList");
+    
+    // Clear previous data
+    teacherAssignmentList.innerHTML = "";
+
+    const assignedStudentsSnapshot = await getDocs(collection(db, "assignedStudents"));
+
+    for (const docSnap of assignedStudentsSnapshot.docs) {
+        const teacherId = docSnap.id;
+        const studentRollNumbers = docSnap.data().students || [];
+
+        const teacherDoc = await getDoc(doc(db, "teachers", teacherId));
+        const teacherName = teacherDoc.exists() ? teacherDoc.data().name : "Unknown Teacher";
+
+        const listItem = document.createElement("li");
+        listItem.textContent = `${teacherName} (ID: ${teacherId}) → Students: ${studentRollNumbers.join(", ")}`;
+        teacherAssignmentList.appendChild(listItem);
+    }
+}
+        
+       
+// View assignments for parents
+async function viewParentAssignments() {
+    const parentAssignmentList = document.getElementById("parentAssignmentList");
+
+    // Clear previous data
+    parentAssignmentList.innerHTML = "";
+
+    const assignedChildrenSnapshot = await getDocs(collection(db, "assignedChildren"));
+
+    for (const docSnap of assignedChildrenSnapshot.docs) {
+        const parentId = docSnap.id;
+        const studentRollNumbers = docSnap.data().children || [];
+
+        const parentDoc = await getDoc(doc(db, "parents", parentId));
+        const parentName = parentDoc.exists() ? parentDoc.data().name : "Unknown Parent";
+
+        const listItem = document.createElement("li");
+        listItem.textContent = `${parentName} (ID: ${parentId}) → Children: ${studentRollNumbers.join(", ")}`;
+        parentAssignmentList.appendChild(listItem);
+    }
+}
+        // Load teachers, students, and parents into dropdowns
+        async function loadDropdowns() {
+            const teacherSelect = document.getElementById('teacherSelect');
+            const studentSelect = document.getElementById('studentSelect');
+            const parentSelect = document.getElementById('parentSelect');
+            const studentForParentSelect = document.getElementById('studentForParentSelect');
+            const teacherDeleteSelect = document.getElementById('teacherDeleteSelect');
+            const studentDeleteSelect = document.getElementById('studentDeleteSelect');
+            const parentDeleteSelect = document.getElementById('parentDeleteSelect');
+
+            teacherSelect.innerHTML = "";
+            studentSelect.innerHTML = "";
+            parentSelect.innerHTML = "";
+            studentForParentSelect.innerHTML = "";
+            teacherDeleteSelect.innerHTML = "";
+            studentDeleteSelect.innerHTML = "";
+            parentDeleteSelect.innerHTML = "";
+
+            const teachersSnapshot = await getDocs(collection(db, "teachers"));
+            teachersSnapshot.forEach(docSnap => {
+                const teacher = docSnap.data();
+                const option = document.createElement("option");
+                option.value = docSnap.id;
+                option.textContent = teacher.name;
+                teacherSelect.appendChild(option);
+                teacherDeleteSelect.appendChild(option.cloneNode(true));
+            });
+
+            const studentsSnapshot = await getDocs(collection(db, "students"));
+            studentsSnapshot.forEach(docSnap => {
+                const student = docSnap.data();
+                const option = document.createElement("option");
+                option.value = docSnap.id;
+                option.textContent = student.name;
+                studentSelect.appendChild(option);
+                studentForParentSelect.appendChild(option.cloneNode(true));
+                studentDeleteSelect.appendChild(option.cloneNode(true));
+            });
+
+            const parentsSnapshot = await getDocs(collection(db, "parents"));
+            parentsSnapshot.forEach(docSnap => {
+                const parent = docSnap.data();
+                const option = document.createElement("option");
+                option.value = docSnap.id;
+                option.textContent = parent.name;
+                parentSelect.appendChild(option);
+                parentDeleteSelect.appendChild(option.cloneNode(true));
+            });
+        }
+
+        // Delete Teacher
+        async function deleteTeacher() {
+            const teacherId = document.getElementById('teacherDeleteSelect').value;
+            if (!teacherId) {
+                alert("Please select a teacher.");
+                return;
+            }
+
+            await deleteDoc(doc(db, "teachers", teacherId));
+            alert("Teacher Deleted!");
+            loadDropdowns();
+        }
+
+        // Delete Student
+        async function deleteStudent() {
+            const studentRoll = document.getElementById('studentDeleteSelect').value;
+            if (!studentRoll) {
+                alert("Please select a student.");
+                return;
+            }
+
+            await deleteDoc(doc(db, "students", studentRoll));
+            alert("Student Deleted!");
+            loadDropdowns();
+        }
+
+        // Delete Parent
+        async function deleteParent() {
+            const parentId = document.getElementById('parentDeleteSelect').value;
+            if (!parentId) {
+                alert("Please select a parent.");
+                return;
+            }
+
+            await deleteDoc(doc(db, "parents", parentId));
+            alert("Parent Deleted!");
+            loadDropdowns();
+        }
+    </script>
+</head>
+<body>
+    <h1>Admin Panel</h1>
+    <!-- Add Teacher Form -->
+    <h2>Add Teacher</h2>
+    <input type="text" id="teacherName" placeholder="Teacher Name">
+    <input type="email" id="teacherEmail" placeholder="Teacher Email">
+    <button id="addTeacherBtn">Add Teacher</button>
+
+    <!-- Add Student Form -->
+    <h2>Add Student</h2>
+    <input type="text" id="studentName" placeholder="Student Name">
+    <input type="text" id="studentRoll" placeholder="Roll Number">
+    <button id="addStudentBtn">Add Student</button>
+
+    <!-- Add Parent Form -->
+    <h2>Add Parent</h2>
+    <input type="text" id="parentName" placeholder="Parent Name">
+    <input type="email" id="parentEmail" placeholder="Parent Email">
+    <button id="addParentBtn">Add Parent</button>
+
+    <!-- Assign Students -->
+    <h2>Assign Students to Teacher</h2>
+    <select id="teacherSelect"></select>
+    <select id="studentSelect" multiple></select>
+    <button id="assignStudentsBtn">Assign Students</button>
+
+    <!-- Assign Children -->
+    <h2>Assign Children to Parent</h2>
+    <select id="parentSelect"></select>
+    <select id="studentForParentSelect" multiple></select>
+    <button id="assignChildrenBtn">Assign Children</button>
+
+    <!-- View Assignments -->
+    <h2>View Teacher Assignments</h2>
+    <button id="viewTeacherAssignmentsBtn">View Assignments</button>
+    <ul id="teacherAssignmentList"></ul>
+
+    <h2>View Parent Assignments</h2>
+    <button id="viewParentAssignmentsBtn">View Assignments</button>
+    <ul id="parentAssignmentList"></ul>
+
+    <!-- Delete Teacher, Student, Parent -->
+    <h2>Delete Teacher</h2>
+    <select id="teacherDeleteSelect"></select>
+    <button id="deleteTeacherBtn">Delete Teacher</button>
+
+    <h2>Delete Student</h2>
+    <select id="studentDeleteSelect"></select>
+    <button id="deleteStudentBtn">Delete Student</button>
+
+    <h2>Delete Parent</h2>
+    <select id="parentDeleteSelect"></select>
+    <button id="deleteParentBtn">Delete Parent</button>
+</body>
+</html>

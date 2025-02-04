@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Login</title>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-app.js";
+        import { getFirestore, collection, query, where, getDocs, setDoc, doc } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore.js";
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBbBd_x2CBbXnr_IYqIWEXX0Uyi0KrVgeE",
+            authDomain: "socialemotional-60ae4.firebaseapp.com",
+            projectId: "socialemotional-60ae4",
+            storageBucket: "socialemotional-60ae4.appspot.com",
+            messagingSenderId: "869691683450",
+            appId: "1:869691683450:web:625a9bacebab34a41581c3"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // When the document is ready
+        document.addEventListener("DOMContentLoaded", () => {
+            document.getElementById("loginBtn").addEventListener("click", studentLogin);
+        });
+
+        // Function to check if the student exists in Firestore
+        async function studentExists(name, rollNumber) {
+            const q = query(collection(db, "students"), where("roll", "==", rollNumber), where("name", "==", name));
+            const querySnapshot = await getDocs(q);
+            return !querySnapshot.empty;
+        }
+
+        // Student login function
+        async function studentLogin() {
+            const name = document.getElementById('studentName').value.trim();
+            const rollNumber = document.getElementById('studentRoll').value.trim();
+
+            if (!name || !rollNumber) {
+                alert("Please enter both your Name and Roll Number.");
+                return;
+            }
+
+            // Check if the student exists in Firestore
+            const exists = await studentExists(name, rollNumber);
+            if (exists) {
+                alert("Login successful! Welcome, Student.");
+                // Store the roll number and name in localStorage
+                localStorage.setItem("studentName", name);
+                localStorage.setItem("studentRollNumber", rollNumber);
+
+                // Store student name and roll number in Firestore (students collection)
+                await setDoc(doc(db, "students", rollNumber), {
+                    name: name,
+                    roll: rollNumber
+                });
+
+                // Redirect to home1.html upon successful login
+                window.location.href = "home1.html";
+            } else {
+                alert("Student with this Name and Roll Number does not exist.");
+            }
+        }
+    </script>
+</head>
+<body>
+    <h1>Student Login</h1>
+
+    <!-- Student Login Form -->
+    <input type="text" id="studentName" placeholder="Enter Name">
+    <input type="text" id="studentRoll" placeholder="Enter Roll Number">
+    <button id="loginBtn">Login</button>
+</body>
+</html>

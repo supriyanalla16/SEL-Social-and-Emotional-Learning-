@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Social and Emotional Learning Questionnaire</title>
+  <link rel="stylesheet" href="home1cs.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Social and Emotional Learning Questionnaire</h1>
+    
+    <!-- Display student roll number -->
+    <p><strong>Your Roll Number: </strong><span id="studentRollNumber"></span></p>
+    <p><strong>Your Name: </strong><span id="studentName"></span></p>
+
+    <form id="questionnaire-form">
+      <!-- Dynamic questionnaire sections will be rendered here -->
+    </form>
+    
+    <button id="submit-btn">Submit</button>
+  </div>
+
+  <script type="module">
+    // Import Firebase libraries
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-app.js";
+    import { getFirestore, doc, setDoc, getDoc, collection, addDoc } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-auth.js";
+
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyBbBd_x2CBbXnr_IYqIWEXX0Uyi0KrVgeE",
+      authDomain: "socialemotional-60ae4.firebaseapp.com",
+      projectId: "socialemotional-60ae4",
+      storageBucket: "socialemotional-60ae4.appspot.com",
+      messagingSenderId: "869691683450",
+      appId: "1:869691683450:web:625a9bacebab34a41581c3"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    // Questionnaire data
+    const questions = {
+      "Academic Questions": [
+        "Do you attend classes regularly?",
+        "Do you participate in extracurricular activities regularly?",
+        "Do you think extracurricular activities help you develop skills useful for your future?",
+        "Do you believe that completing your education will help you achieve your long-term career goals?",
+        "Do you feel confident in your ability to achieve your academic goals?"
+      ],
+      "Behavioral Questions": [
+        "Do you prefer hands-on activities (e.g., sports, crafts) over theoretical lessons?",
+        "Have you ever considered dropping out of school in the past year?",
+        "Are you currently experiencing financial difficulties that affect your education?",
+        "Have you lost a close family member or friend recently?"
+      ],
+      "Emotional Intelligence Questions": [
+        "Do you feel interested in learning new things at school?",
+        "Do you often get bored with the current school curriculum?",
+        "Do you find it easy to make friends and work in teams with your classmates?",
+        "Do you feel supported and understood by your teachers when you face challenges?"
+      ],
+      "Self-Awareness Questions": [
+        "Do you know what you are good at and what you need help with?",
+        "Do you know what makes you unique or special?",
+        "When you make a mistake, do you think about how to avoid it next time?"
+      ],
+      "Parent-Child Relationship": [
+        "Do your parents listen to you and understand how you feel?",
+        "Do your parents encourage you and support your dreams?",
+        "Do you feel comfortable sharing your problems with your parents?"
+      ]
+    };
+
+    // Render questionnaire dynamically
+    const form = document.getElementById("questionnaire-form");
+
+    Object.keys(questions).forEach(section => {
+      const sectionDiv = document.createElement("div");
+      sectionDiv.classList.add("section");
+      const sectionHeader = document.createElement("h2");
+      sectionHeader.textContent = section;
+      sectionDiv.appendChild(sectionHeader);
+
+      questions[section].forEach((question, index) => {
+        const questionDiv = document.createElement("div");
+        questionDiv.classList.add("question");
+        const questionLabel = document.createElement("label");
+        questionLabel.textContent = question;
+
+        const yesInput = document.createElement("input");
+        yesInput.type = "radio";
+        yesInput.name = `${section}_${index}`;
+        yesInput.value = "Yes";
+
+        const noInput = document.createElement("input");
+        noInput.type = "radio";
+        noInput.name = `${section}_${index}`;
+        noInput.value = "No";
+
+        questionDiv.appendChild(questionLabel);
+        questionDiv.appendChild(yesInput);
+        questionDiv.appendChild(document.createTextNode(" Yes "));
+        questionDiv.appendChild(noInput);
+        questionDiv.appendChild(document.createTextNode(" No "));
+
+        sectionDiv.appendChild(questionDiv);
+      });
+
+      form.appendChild(sectionDiv);
+    });
+
+    // Display the roll number and name from localStorage
+    document.getElementById('studentRollNumber').textContent = localStorage.getItem("studentRollNumber");
+    document.getElementById('studentName').textContent = localStorage.getItem("studentName");
+
+    // Submit form data
+    document.getElementById("submit-btn").addEventListener("click", async () => {
+      const formData = {};
+
+      // Collect form data while maintaining order
+      Object.keys(questions).forEach(section => {
+        formData[section] = [];
+        questions[section].forEach((question, index) => {
+          const answer = document.querySelector(`input[name="${section}_${index}"]:checked`);
+          formData[section].push({
+            question: question,
+            answer: answer ? answer.value : null
+          });
+        });
+      });
+
+      // Get the current logged-in user
+      onAuthStateChanged(auth, async user => {
+        if (user) {
+          const userId = user.uid; // Use the unique user ID from Firebase Authentication
+
+          // Get the student's roll number from localStorage
+          const rollNumber = localStorage.getItem("studentRollNumber");
+          const name = localStorage.getItem("studentName");
+
+          try {
+            // Add responses to a new collection (questionnaireResponses)
+            const questionnaireDocRef = await addDoc(collection(db, "questionnaireResponses"), {
+              userId: userId,
+              name: name,
+              rollNumber: rollNumber,
+              responses: formData,
+              timestamp: new Date() // You can add a timestamp to track submission time
+            });
+
+            alert("Your responses have been submitted successfully!");
+          } catch (error) {
+            console.error("Error saving responses:", error);
+            alert("An error occurred while submitting your responses. Please try again.");
+          }
+        } else {
+          alert("You need to log in to submit your responses.");
+        }
+      });
+    });
+  </script>
+</body>
+</html>

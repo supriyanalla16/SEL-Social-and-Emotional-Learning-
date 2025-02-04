@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parent Login</title>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-app.js";
+        import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBbBd_x2CBbXnr_IYqIWEXX0Uyi0KrVgeE",
+            authDomain: "socialemotional-60ae4.firebaseapp.com",
+            projectId: "socialemotional-60ae4",
+            storageBucket: "socialemotional-60ae4.appspot.com",
+            messagingSenderId: "869691683450",
+            appId: "1:869691683450:web:625a9bacebab34a41581c3"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        document.addEventListener("DOMContentLoaded", () => {
+            document.getElementById("loginBtn").addEventListener("click", loginParent);
+        });
+
+        // Login the parent and redirect to parent dashboard page
+        async function loginParent() {
+            const name = document.getElementById('parentName').value.trim();
+            const email = document.getElementById('parentEmail').value.trim();
+            if (!name || !email) {
+                alert("Enter Parent Name and Email.");
+                return;
+            }
+
+            const parentRef = await getParentByNameAndEmail(name, email);
+            if (parentRef) {
+                // Redirect to dashboard and pass parentId as URL parameter
+                window.location.href = `parent_dashboard.html?parentId=${parentRef}`;
+            } else {
+                alert("Parent not found.");
+            }
+        }
+
+        // Fetch parent by name and email
+        async function getParentByNameAndEmail(name, email) {
+            const parentsSnapshot = await getDocs(collection(db, "parents"));
+            let parentRef = null;
+
+            parentsSnapshot.forEach(doc => {
+                if (doc.data().name === name && doc.data().email === email) {
+                    parentRef = doc.id;
+                }
+            });
+            return parentRef;
+        }
+    </script>
+</head>
+<body>
+    <h2>Parent Login</h2>
+    <input type="text" id="parentName" placeholder="Enter Parent Name">
+    <input type="email" id="parentEmail" placeholder="Enter Parent Email">
+    <button id="loginBtn">Login</button>
+</body>
+</html>

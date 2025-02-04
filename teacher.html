@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Login</title>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-app.js";
+        import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBbBd_x2CBbXnr_IYqIWEXX0Uyi0KrVgeE",
+            authDomain: "socialemotional-60ae4.firebaseapp.com",
+            projectId: "socialemotional-60ae4",
+            storageBucket: "socialemotional-60ae4.appspot.com",
+            messagingSenderId: "869691683450",
+            appId: "1:869691683450:web:625a9bacebab34a41581c3"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        document.addEventListener("DOMContentLoaded", () => {
+            document.getElementById("loginBtn").addEventListener("click", loginTeacher);
+        });
+
+        // Login the teacher and redirect to dashboard page
+        async function loginTeacher() {
+            const name = document.getElementById('teacherName').value.trim();
+            const email = document.getElementById('teacherEmail').value.trim();
+            if (!name || !email) {
+                alert("Enter Teacher Name and Email.");
+                return;
+            }
+
+            const teacherRef = await getTeacherByNameAndEmail(name, email);
+            if (teacherRef) {
+                // Redirect to dashboard and pass teacherId as URL parameter
+                window.location.href = `teacher_dashboard.html?teacherId=${teacherRef}`;
+            } else {
+                alert("Teacher not found.");
+            }
+        }
+
+        // Fetch teacher by name and email
+        async function getTeacherByNameAndEmail(name, email) {
+            const teachersSnapshot = await getDocs(collection(db, "teachers"));
+            let teacherRef = null;
+
+            teachersSnapshot.forEach(doc => {
+                if (doc.data().name === name && doc.data().email === email) {
+                    teacherRef = doc.id;
+                }
+            });
+            return teacherRef;
+        }
+    </script>
+</head>
+<body>
+    <h2>Teacher Login</h2>
+    <input type="text" id="teacherName" placeholder="Enter Teacher Name">
+    <input type="email" id="teacherEmail" placeholder="Enter Teacher Email">
+    <button id="loginBtn">Login</button>
+</body>
+</html>

@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Questionnaire</title>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-app.js";
+        import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBbBd_x2CBbXnr_IYqIWEXX0Uyi0KrVgeE",
+            authDomain: "socialemotional-60ae4.firebaseapp.com",
+            projectId: "socialemotional-60ae4",
+            storageBucket: "socialemotional-60ae4.appspot.com",
+            messagingSenderId: "869691683450",
+            appId: "1:869691683450:web:625a9bacebab34a41581c3"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        const questions = {
+            "Academic Questions": [
+                "How regularly does the student attend classes?",
+                "Does the student actively participate in class discussions?",
+                "How does the student perform academically compared to their peers?",
+                "Does the student complete assignments and projects on time?",
+                "Have you noticed any recent changes in the student's academic performance?",
+                "Does the student participate in any extracurricular activities?",
+                "Does the student regularly participate in sports or physical activities?"
+            ],
+            "Behavioral Questions": [
+                "Has the student demonstrated any leadership qualities in extracurricular activities?",
+                "Does the student seek help from teachers or staff when facing challenges?",
+                "Have you observed any instances where the student was involved in or affected by bullying?",
+                "Do you feel the student is at risk of dropping out or showing signs of academic disengagement?"
+            ],
+            "Emotional Intelligence Questions": [
+                "Does the student have a group of friends or a support network at school?",
+                "Have you observed any signs of stress, anxiety, or frustration in the student related to academics or other issues?",
+                "Do you feel the student is motivated and confident about their future goals?",
+                "How would you rate the student’s enthusiasm and engagement in extracurricular activities?"
+            ]
+        };
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const rollNumber = urlParams.get('rollNumber');  // Capture the roll number from the URL
+            if (!rollNumber) {
+                alert("Roll number not found.");
+                window.location.href = "rollnumber.html";  // Redirect to rollnumber.html if not found
+            } else {
+                document.getElementById("rollDisplay").innerText = "Roll Number: " + rollNumber;
+                sessionStorage.setItem("rollNumber", rollNumber);  // Save roll number in sessionStorage
+            }
+            renderQuestions();
+        });
+
+        function renderQuestions() {
+            const form = document.getElementById("teacher-questionnaire-form");
+            Object.keys(questions).forEach(section => {
+                const sectionDiv = document.createElement("div");
+                sectionDiv.classList.add("section");
+                const sectionHeader = document.createElement("h2");
+                sectionHeader.textContent = section;
+                sectionDiv.appendChild(sectionHeader);
+
+                questions[section].forEach((question, index) => {
+                    const questionDiv = document.createElement("div");
+                    questionDiv.classList.add("question");
+                    questionDiv.innerHTML = 
+                        `<label>${question}</label><br>
+                        <input type="radio" name="${section}_${index}" value="Yes"> Yes 
+                        <input type="radio" name="${section}_${index}" value="No"> No
+                    `;
+                    sectionDiv.appendChild(questionDiv);
+                });
+
+                form.appendChild(sectionDiv);
+            });
+        }
+
+        document.getElementById("submit-btn").addEventListener("click", async () => {
+            const formData = {};
+            const rollNumber = sessionStorage.getItem("rollNumber");
+
+            Object.keys(questions).forEach(section => {
+                formData[section] = [];
+                questions[section].forEach((question, index) => {
+                    const answer = document.querySelector(`input[name="${section}_${index}"]:checked`);
+                    formData[section].push({
+                        question: question,
+                        answer: answer ? answer.value : null
+                    });
+                });
+            });
+
+            formData["rollNumber"] = rollNumber;
+
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    const userId = user.uid;
+                    try {
+                        await setDoc(doc(db, "teacherquestionnaire", `${userId}_${rollNumber}`), formData);
+                        alert("Your responses have been submitted successfully!");
+                    } catch (error) {
+                        console.error("Error saving responses:", error);
+                        alert("An error occurred while submitting your responses.");
+                    }
+                } else {
+                    alert("You need to log in to submit your responses.");
+                }
+            });
+        });
+    </script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .question {
+            margin-bottom: 15px;
+        }
+        button {
+            font-size: 18px;
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h2>Teacher Questionnaire</h2>
+    <p id="rollDisplay"></p>
+    <form id="teacher-questionnaire-form"></form>
+    <button id="submit-btn">Submit</button>
+</body>
+</html>

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parent Dashboard</title>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-app.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBbBd_x2CBbXnr_IYqIWEXX0Uyi0KrVgeE",
+            authDomain: "socialemotional-60ae4.firebaseapp.com",
+            projectId: "socialemotional-60ae4",
+            storageBucket: "socialemotional-60ae4.appspot.com",
+            messagingSenderId: "869691683450",
+            appId: "1:869691683450:web:625a9bacebab34a41581c3"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const parentId = urlParams.get('parentId');
+            if (parentId) {
+                loadAssignedChildren(parentId);
+            } else {
+                alert("Parent not found.");
+            }
+        });
+
+        // Load children assigned to the parent from the parentId
+        async function loadAssignedChildren(parentId) {
+            const assignedRef = doc(db, "assignedChildren", parentId);
+            const assignedSnap = await getDoc(assignedRef);
+
+            if (assignedSnap.exists()) {
+                const childrenRollNumbers = assignedSnap.data().children || [];
+                const childrenList = document.getElementById("childrenList");
+                childrenList.innerHTML = "";
+
+                // Fetch child details for each assigned child
+                for (const roll of childrenRollNumbers) {
+                    const childDoc = await getDoc(doc(db, "students", roll));
+                    if (childDoc.exists()) {
+                        const childName = childDoc.data().name;
+                        const listItem = document.createElement("li");
+
+                        // Create a clickable link for each child with the correct roll number in the URL
+                        const childLink = document.createElement("a");
+                        childLink.href = `home3.html?rollNumber=${roll}`; // Correct URL with roll number using template literals
+                        childLink.textContent = `${childName} (Roll: ${roll})`;
+                        listItem.appendChild(childLink);
+                        childrenList.appendChild(listItem);
+                    }
+                }
+            } else {
+                alert("No children assigned.");
+            }
+        }
+    </script>
+</head>
+<body>
+    <h2>Parent Dashboard</h2>
+    <h3>Assigned Children:</h3>
+    <ul id="childrenList"></ul>
+</body>
+</html>
